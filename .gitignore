@@ -1,0 +1,32 @@
+# 构建产物
+backend/target/
+portal-web/dist/
+admin-web/dist/
+portal-web/node_modules/
+admin-web/node_modules/
+
+# 包管理与缓存
+.pnpm-store/
+node_modules/
+.npm-cache/
+
+# 环境变量（保留模板）
+deploy/.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 日志
+*.log
+logs/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 本地文档素材（不纳入版本库）
+4. 文档素材/

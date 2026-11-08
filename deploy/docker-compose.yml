@@ -1,0 +1,90 @@
+name: yunshu-zhixue
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: yszx-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-yszx}
+      MYSQL_USER: ${MYSQL_USER:-yszx}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-yszx123456}
+      TZ: Asia/Shanghai
+    ports:
+      # 本机 3306 可能被其他项目占用，默认使用 3307
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../scripts/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: yszx-redis
+    restart: unless-stopped
+    command: [ "redis-server", "--appendonly", "yes" ]
+    ports:
+      # 本机 6379 可能被其他项目占用，默认使用 6380
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    # 官方 minio/minio 镜像当前无法直连拉取，使用本地可获取的 Bitnami 兼容镜像
+    image: ${MINIO_IMAGE:-docker.1ms.run/bitnamilegacy/minio:latest}
+    container_name: yszx-minio
+    restart: unless-stopped
+    user: "0"
+    entrypoint: [ "minio" ]
+    command: [ "server", "/data", "--console-address", ":9001" ]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  minio-init:
+    # 复用 MinIO 镜像内置的 mc，避免额外拉取 minio/mc
+    image: ${MINIO_IMAGE:-docker.1ms.run/bitnamilegacy/minio:latest}
+    container_name: yszx-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      MC=/opt/bitnami/minio-client/bin/mc;
+      $$MC alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} &&
+      ($$MC mb -p local/${MINIO_BUCKET:-yszx} || true) &&
+      $$MC anonymous set download local/${MINIO_BUCKET:-yszx} &&
+      echo 'MinIO bucket ready: ${MINIO_BUCKET:-yszx}'
+      "
+    restart: "no"
+
+volumes:
+  mysql-data:
+  redis-data:
+  minio-data:
