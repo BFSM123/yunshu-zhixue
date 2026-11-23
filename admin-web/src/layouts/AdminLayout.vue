@@ -10,7 +10,7 @@
       </div>
 
       <el-menu
-        :default-active="route.path"
+        :default-active="activeMenu"
         :collapse="isCollapsed"
         :collapse-transition="false"
         router
@@ -93,12 +93,26 @@ const contentRef = ref<HTMLElement | null>(null)
 
 const userInitial = computed(() => (userStore.profile?.nickname || '管').slice(0, 1))
 
+// 详情等子路径仍高亮所属菜单
+const activeMenu = computed(() => {
+  const paths = permissionStore.menus.flatMap((group) => [
+    group.path,
+    ...(group.children?.map((child) => child.path) ?? [])
+  ])
+  const matched = paths
+    .filter((path) => path !== '/' && (route.path === path || route.path.startsWith(`${path}/`)))
+    .sort((left, right) => right.length - left.length)[0]
+  return matched || route.path
+})
+
 const breadcrumbs = computed(() => {
   for (const group of permissionStore.menus) {
     if (group.path === route.path) {
       return [group.title]
     }
-    const child = group.children?.find((item) => item.path === route.path)
+    const child = group.children?.find(
+      (item) => route.path === item.path || route.path.startsWith(`${item.path}/`)
+    )
     if (child) {
       return [group.title, child.title]
     }

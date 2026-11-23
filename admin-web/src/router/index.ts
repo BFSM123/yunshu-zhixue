@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '学习路线', permission: 'route:view' }
       },
       {
+        path: 'content/routes/:id',
+        name: 'route-manage-detail',
+        component: () => import('@/views/content/RouteDetailView.vue'),
+        meta: { title: '路线课程管理', permission: 'route:view' }
+      },
+      {
         path: 'students',
         name: 'students',
         component: () => import('@/views/student/StudentListView.vue'),

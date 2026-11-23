@@ -100,3 +100,62 @@ export interface CourseImportPreview {
 export interface CourseImportResult {
   importedCount: number
 }
+
+export interface RouteCoursePreview {
+  routeCourseId: number
+  courseId: number
+  name: string
+  bvid: string | null
+  durationMinutes: number
+}
+
+export interface RouteItem {
+  id: number
+  name: string
+  subjectId: number
+  subjectName: string
+  status: number
+  icon: string | null
+  targetEducation: string | null
+  description: string | null
+  courseCount: number
+  totalDurationMinutes: number
+  previewCourses: RouteCoursePreview[]
+}
+
+export interface RouteCourseItem {
+  routeCourseId: number
+  courseId: number
+  name: string
+  bvid: string | null
+  durationMinutes: number
+  source: number
+  coverUrl: string | null
+  subjectId: number | null
+  subjectName: string
+  sortOrder: number
+  otherSubject: boolean
+}
+
+export interface RouteDetail {
+  id: number
+  name: string
+  subjectId: number
+  subjectName: string
+  status: number
+  icon: string | null
+  targetEducation: string | null
+  description: string | null
+  courseCount: number
+  totalDurationMinutes: number
+  courses: RouteCourseItem[]
+}
+
+export interface RoutePayload {
+  name: string
+  subjectId: number
+  status: number
+  icon?: string
+  targetEducation?: string
+  description?: string
+}
